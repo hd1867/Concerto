@@ -106,8 +106,4 @@ def list_notes(data, fs, bpm=60):
         notes.append(find_note(freq))
         
     return notes
-    
 
-fs, data = wavfile.read('1k.wav')
-
-print(list_notes(data, fs, bpm=80))

@@ -8,16 +8,18 @@ By: Hendrick Ducasse
 from PIL import Image, ImageDraw, ImageFont
 import shutil
 import noteAnalysis
+import numpy as np
+from scipy.io import wavfile
 
 #Paths of bitmaps
-TREBLE_CLEF = "Assets/treble.bmp"
-QUARTER_NOTE = "Assets/QNote.bmp"
-UPSIDEDOWN_QUARTER_NOTE = "Assets/QNoteUpsideDown.bmp"
+TREBLE_CLEF = "Assets/treble_clef_DUMB_fix.bmp"
+QUARTER_NOTE = "Assets/quarter_note.bmp"
+UPSIDEDOWN_QUARTER_NOTE = "Assets/quarter_note_upside-down.bmp"
 
 #The height of each note(In Pixels)
 WHOLE_STEP = 11
 HALF_STEP = WHOLE_STEP/2
-OCTAVE = WHOLE_STEP * 8
+OCTAVE = HALF_STEP * 11
 #F4 is the first note that is entirely in the staff. It is used as a reference point for all other notes
 REFERENCE_NOTE = 5
 REFERENCE_OCTAVE = 4
@@ -32,6 +34,7 @@ MARGIN_HEIGHT = 35 #The space between the margin and the top of the first ledger
 MARGIN_WIDTH = 30 #The space between the margin and the beginning of each ledger line
 MEASURE_WIDTH = (LEDGER_WIDTH - RESERVED_SPACE)/4 #The Width of each measure
 BEAT_SPACE = MEASURE_WIDTH/4 #Assuming you're in Common time, the width each beat takes up in a measure
+NOTE_WIDTH = 15
 MAX_NOTES_PER_PAGE = 128
 """
 @initializeStaff(staffName, TEMPLATE = "Assets/template.png"(DO NOT EDIT UNLESS ABSOLUTELY NECESSARY)
@@ -40,9 +43,9 @@ This function initializes the staff based off of the template image
 :returns
 drawImage - The pillow DrawImage object used to edit the staff image
 """
-def initializeStaff(staffName, TEMPLATE = "Assets/template.jpg" ):
-    shutil.copyfile(TEMPLATE, staffName + ".jpg")
-    base = Image.open(staffName + ".jpg")
+def initializeStaff(staffName, TEMPLATE = "Assets/template.png" ):
+    shutil.copyfile(TEMPLATE, staffName + ".png")
+    base = Image.open(staffName + ".png")
     staff = ImageDraw.Draw(base)
     return staff, base
 
@@ -66,22 +69,40 @@ def addTrebleClefs(staff):
         trebleClefX = MARGIN_WIDTH
         trebleClefY = MARGIN_HEIGHT + LEDGER_HEIGHT*i + LEDGER_PADDING*i
         trebleClefPosition = (trebleClefX, trebleClefY)
-        staff.bitmap(trebleClefPosition, Image.open(TREBLE_CLEF), fill="black")
+        staff.bitmap(trebleClefPosition, Image.open(TREBLE_CLEF).convert("1"), fill="black")
 
 
 def addNotes(staff, notes):
-    for note, octave in notes:
+    for i in range(len(notes)):
+        if notes[i] == None:
+            continue
+        note, octave = notes[i]
         octave_offset = REFERENCE_OCTAVE - octave
         note_offset = REFERENCE_NOTE - note
+        print(note_offset, octave_offset)
+        noteX = ((i-1) % 16) * BEAT_SPACE + BEAT_SPACE/2 + MARGIN_WIDTH + RESERVED_SPACE - NOTE_WIDTH/2
+        print(note_offset + octave_offset * 8)
+        noteY = MARGIN_HEIGHT + LEDGER_HEIGHT * (i//16) + LEDGER_PADDING * (i//16) + HALF_STEP * note_offset
 
+        notePosition = (noteX, noteY)
+
+        if octave >= 5:
+            staff.bitmap(notePosition, Image.open(UPSIDEDOWN_QUARTER_NOTE).convert("1"))
+        else:
+            staff.bitmap(notePosition, Image.open(QUARTER_NOTE).convert("1"))
 
 
 def saveSheet(base, name):
     base.save(name)
 
 
+fs, data = wavfile.read('Assets/testMelody.wav')
+notes = noteAnalysis.list_notes(data[:,0], fs, 120)
+
+
 staff, base = initializeStaff("test1")
-saveSheet(base, "test.jpg")
+saveSheet(base, "test.png")
 drawMeasureLines(staff)
 addTrebleClefs(staff)
-saveSheet(base, "test1.jpg")
+addNotes(staff, notes)
+saveSheet(base, "test1.png")
