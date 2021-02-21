@@ -12,9 +12,11 @@ import numpy as np
 from scipy.io import wavfile
 
 #Paths of bitmaps
-TREBLE_CLEF = "Assets/treble_clef_DUMB_fix.bmp"
-QUARTER_NOTE = "Assets/quarter_note.bmp"
-UPSIDEDOWN_QUARTER_NOTE = "Assets/quarter_note_upside-down.bmp"
+TREBLE_CLEF = "Assets/treble.bmp"
+QUARTER_NOTE = "Assets/QNote.bmp"
+UPSIDEDOWN_QUARTER_NOTE = "Assets/HighQNote.bmp"
+QUARTER_REST = "Assets/QRest.bmp"
+COMMON_TIME = "Assets/CTime.bmp"
 
 #The height of each note(In Pixels)
 WHOLE_STEP = 11
@@ -35,6 +37,7 @@ MARGIN_WIDTH = 30 #The space between the margin and the beginning of each ledger
 MEASURE_WIDTH = (LEDGER_WIDTH - RESERVED_SPACE)/4 #The Width of each measure
 BEAT_SPACE = MEASURE_WIDTH/4 #Assuming you're in Common time, the width each beat takes up in a measure
 NOTE_WIDTH = 15
+NOTE_HEIGHT = 30
 MAX_NOTES_PER_PAGE = 128
 """
 @initializeStaff(staffName, TEMPLATE = "Assets/template.png"(DO NOT EDIT UNLESS ABSOLUTELY NECESSARY)
@@ -75,21 +78,23 @@ def addTrebleClefs(staff):
 def addNotes(staff, notes):
     for i in range(len(notes)):
         if notes[i] == None:
+            noteY = MARGIN_HEIGHT + LEDGER_HEIGHT * (i // 16) + LEDGER_PADDING * (i//16) + NOTE_HEIGHT/2
+            noteX = ((i - 1) % 16) * BEAT_SPACE + BEAT_SPACE / 2 + MARGIN_WIDTH + RESERVED_SPACE - NOTE_WIDTH / 2
+            notePosition = (noteX, noteY)
+            staff.bitmap(notePosition, Image.open(QUARTER_REST).convert("1"), fill="black")
             continue
         note, octave = notes[i]
         octave_offset = REFERENCE_OCTAVE - octave
         note_offset = REFERENCE_NOTE - note
-        print(note_offset, octave_offset)
         noteX = ((i-1) % 16) * BEAT_SPACE + BEAT_SPACE/2 + MARGIN_WIDTH + RESERVED_SPACE - NOTE_WIDTH/2
-        print(note_offset + octave_offset * 8)
         noteY = MARGIN_HEIGHT + LEDGER_HEIGHT * (i//16) + LEDGER_PADDING * (i//16) + HALF_STEP * note_offset
 
         notePosition = (noteX, noteY)
 
         if octave >= 5:
-            staff.bitmap(notePosition, Image.open(UPSIDEDOWN_QUARTER_NOTE).convert("1"))
+            staff.bitmap(notePosition, Image.open(UPSIDEDOWN_QUARTER_NOTE).convert("1"), fill="black")
         else:
-            staff.bitmap(notePosition, Image.open(QUARTER_NOTE).convert("1"))
+            staff.bitmap(notePosition, Image.open(QUARTER_NOTE).convert("1"), fill="black")
 
 
 def saveSheet(base, name):
